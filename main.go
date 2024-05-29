@@ -1,32 +1,72 @@
 package main
 
 import (
-	"errors"
-	"fmt"
-	"io"
-	"net/http"
+	"context"
+   "log/slog"
 	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/disgoorg/disgo"
+	"github.com/disgoorg/disgo/bot"
+   "github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/gateway"
 )
 
 func main() {
-	http.HandleFunc("/", getRoot)
-	http.HandleFunc("/hello", getHello)
+   slog.Info("starting example...")
+	slog.Info("disgo version", slog.String("version", disgo.Version))
 
-	err := http.ListenAndServe(":8080", nil)
+   token := os.Getenv("DISCORD_BOT_TOKEN")
+   if token == "" {
+      slog.Error("DISCORD_BOT_TOKEN has not been set.")
+		return
+   }
 
-   if errors.Is(err, http.ErrServerClosed) {
-		fmt.Printf("server closed\n")
-	} else if err != nil {
-		fmt.Printf("error starting server: %s\n", err)
-		os.Exit(1)
+	client, err := disgo.New(token,
+		// set gateway options
+		bot.WithGatewayConfigOpts(
+			// set enabled intents
+			gateway.WithIntents(
+				gateway.IntentGuildMessages,
+				gateway.IntentMessageContent,
+			),
+		),
+		// add event listeners
+		bot.WithEventListenerFunc(onMessageCreate),
+	)
+
+	if err != nil {
+		slog.Error("error while building disgo", slog.Any("err", err))
+		return
 	}
+
+   defer client.Close(context.TODO())
+
+	// connect to the gateway
+	if err = client.OpenGateway(context.TODO()); err != nil {
+		slog.Error("errors while connecting to gateway", slog.Any("err", err))
+		return
+	}
+
+   slog.Info("example is now running. Press CTRL-C to exit.")
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
+	<-s
 }
 
-func getRoot(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("got / request\n")
-	io.WriteString(w, "This is my website!\n")
-}
-func getHello(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("got /hello request\n")
-	io.WriteString(w, "Hello, HTTP!\n")
+func onMessageCreate(event *events.MessageCreate) {
+	if event.Message.Author.Bot {
+		return
+	}
+	var message string
+	if event.Message.Content == "ping" {
+		message = "pong"
+	} else if event.Message.Content == "pong" {
+		message = "ping"
+	}
+	if message != "" {
+		_, _ = event.Client().Rest().CreateMessage(event.ChannelID, discord.NewMessageCreateBuilder().SetContent(message).Build())
+	}
 }
