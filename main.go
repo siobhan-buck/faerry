@@ -2,27 +2,27 @@ package main
 
 import (
 	"context"
-   "log/slog"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
-   "github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
 )
 
 func main() {
-   slog.Info("starting example...")
+	slog.Info("starting example...")
 	slog.Info("disgo version", slog.String("version", disgo.Version))
 
-   token := os.Getenv("DISCORD_BOT_TOKEN")
-   if token == "" {
-      slog.Error("DISCORD_BOT_TOKEN has not been set.")
+	token := os.Getenv("DISCORD_BOT_TOKEN")
+	if token == "" {
+		slog.Error("DISCORD_BOT_TOKEN has not been set.")
 		return
-   }
+	}
 
 	client, err := disgo.New(token,
 		// set gateway options
@@ -42,7 +42,7 @@ func main() {
 		return
 	}
 
-   defer client.Close(context.TODO())
+	defer client.Close(context.TODO())
 
 	// connect to the gateway
 	if err = client.OpenGateway(context.TODO()); err != nil {
@@ -50,7 +50,7 @@ func main() {
 		return
 	}
 
-   slog.Info("example is now running. Press CTRL-C to exit.")
+	slog.Info("example is now running. Press CTRL-C to exit.")
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
 	<-s
