@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,6 +16,15 @@ import (
 )
 
 func main() {
+	slog.Info("initiate helath check routine...")
+	go func() {
+		_ = http.ListenAndServe(":8080", http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte("alive"))
+			},
+		))
+	}()
+
 	slog.Info("starting example...")
 	slog.Info("disgo version", slog.String("version", disgo.Version))
 
