@@ -5,8 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -25,7 +23,7 @@ func main() {
 		))
 	}()
 
-	slog.Info("starting example...")
+	slog.Info("starting faerry...")
 	slog.Info("disgo version", slog.String("version", disgo.Version))
 
 	token := os.Getenv("DISCORD_BOT_TOKEN")
@@ -60,10 +58,7 @@ func main() {
 		return
 	}
 
-	slog.Info("example is now running. Press CTRL-C to exit.")
-	s := make(chan os.Signal, 1)
-	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
-	<-s
+	slog.Info("faerry is awake and ready to interact")
 }
 
 func onMessageCreate(event *events.MessageCreate) {
@@ -71,10 +66,10 @@ func onMessageCreate(event *events.MessageCreate) {
 		return
 	}
 	var message string
-	if event.Message.Content == "ping" {
-		message = "pong"
-	} else if event.Message.Content == "pong" {
-		message = "ping"
+	if event.Message.Content == "hey" {
+		message = "listen"
+	} else if event.Message.Content == "listen" {
+		message = "hey"
 	}
 	if message != "" {
 		_, _ = event.Client().Rest().CreateMessage(event.ChannelID, discord.NewMessageCreateBuilder().SetContent(message).Build())
